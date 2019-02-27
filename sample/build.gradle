@@ -1,51 +1,35 @@
 apply from: '../dependencies.gradle'
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'me.tatarka:gradle-retrolambda:3.6.0'
-    }
-}
-
 apply plugin: 'com.android.application'
-apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 android {
-    compileSdkVersion versions.compileSdk
-    buildToolsVersion versions.buildTools
+  compileSdkVersion versions.compileSdk
+  buildToolsVersion versions.buildTools
 
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-    defaultConfig {
-        applicationId "com.afollestad.materialdialogssample"
-        minSdkVersion versions.minSdk
-        targetSdkVersion versions.compileSdk
-        versionCode versions.publishVersionCode
-        versionName versions.publishVersion
-    }
-    lintOptions {
-        abortOnError false
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            shrinkResources false
-        }
-    }
+  defaultConfig {
+    applicationId "com.afollestad.materialdialogssample"
+    minSdkVersion versions.minSdk
+    targetSdkVersion versions.compileSdk
+    versionCode versions.publishVersionCode
+    versionName versions.publishVersion
+  }
 }
 
 dependencies {
-    compile project(':core')
-    compile project(':commons')
+  implementation project(':core')
+  implementation project(':input')
+  implementation project(':files')
+  implementation project(':color')
 
-    compile 'com.android.support:gridlayout-v7:' + versions.supportLib
+  implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:' + versions.kotlin
 
-    compile 'com.jakewharton:butterknife:' + versions.butterKnife
-    annotationProcessor 'com.jakewharton:butterknife-compiler:' + versions.butterKnife
+  implementation 'androidx.appcompat:appcompat:' + versions.androidxCore
+  implementation 'androidx.gridlayout:gridlayout:' + versions.androidxRecyclerView
+  implementation 'androidx.recyclerview:recyclerview:' + versions.androidxRecyclerView
+  implementation 'com.google.android.material:material:' + versions.androidxMaterial
 
-    compile 'com.facebook.stetho:stetho:1.4.2'
+  implementation 'com.afollestad:assent:' + versions.assent
 }
+
+apply from: '../spotless.gradle'

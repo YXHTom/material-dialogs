@@ -1,35 +1,35 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 apply from: '../dependencies.gradle'
 
-ext {
-    PUBLISH_GROUP_ID = 'com.afollestad.material-dialogs'
-    PUBLISH_ARTIFACT_ID = 'core'
-    PUBLISH_VERSION = versions.publishVersion
-}
+ext.shard = 'core'
+apply from: '../bintrayconfig.gradle'
 
 android {
-    compileSdkVersion versions.compileSdk
-    buildToolsVersion versions.buildTools
+  compileSdkVersion versions.compileSdk
+  buildToolsVersion versions.buildTools
 
-    defaultConfig {
-        minSdkVersion versions.minSdk
-        targetSdkVersion versions.compileSdk
-        versionCode versions.publishVersionCode
-        versionName versions.publishVersion
-        consumerProguardFiles 'progress-proguard.txt'
-    }
-    lintOptions {
-        abortOnError false
-        checkReleaseBuilds false
-    }
+  defaultConfig {
+    minSdkVersion versions.minSdk
+    targetSdkVersion versions.compileSdk
+    versionCode versions.publishVersionCode
+    versionName versions.publishVersion
+  }
+
+  sourceSets {
+    main.res.srcDirs = [
+        'src/main/res',
+        'src/main/res-public'
+    ]
+  }
 }
 
 dependencies {
-    compile 'com.android.support:support-v13:' + versions.supportLib
-    compile 'com.android.support:appcompat-v7:' + versions.supportLib
-    compile 'com.android.support:recyclerview-v7:' + versions.supportLib
-    compile 'com.android.support:support-annotations:' + versions.supportLib
-    compile 'me.zhanghai.android.materialprogressbar:library:' + versions.mdProgressBar
+  api 'androidx.appcompat:appcompat:' + versions.androidxCore
+  api 'androidx.annotation:annotation:' + versions.androidxAnnotation
+
+  implementation 'androidx.recyclerview:recyclerview:' + versions.androidxRecyclerView
+  implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:' + versions.kotlin
 }
 
-apply from: 'https://raw.githubusercontent.com/afollestad/aidanfollestad.com/master/android-lib-release.gradle'
+apply from: '../spotless.gradle'
