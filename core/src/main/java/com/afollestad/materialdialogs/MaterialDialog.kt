@@ -19,12 +19,18 @@ package com.afollestad.materialdialogs
 
 import android.app.Dialog
 import android.content.Context
+import android.graphics.Color.TRANSPARENT
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.util.TypedValue
+import android.util.TypedValue.COMPLEX_UNIT_DIP
+import android.view.LayoutInflater
 import androidx.annotation.CheckResult
+import androidx.annotation.DimenRes
 import androidx.annotation.DrawableRes
+import androidx.annotation.Px
 import androidx.annotation.StringRes
-import com.afollestad.materialdialogs.Theme.Companion.inferTheme
 import com.afollestad.materialdialogs.WhichButton.NEGATIVE
 import com.afollestad.materialdialogs.WhichButton.NEUTRAL
 import com.afollestad.materialdialogs.WhichButton.POSITIVE
@@ -33,32 +39,24 @@ import com.afollestad.materialdialogs.callbacks.invokeAll
 import com.afollestad.materialdialogs.internal.list.DialogAdapter
 import com.afollestad.materialdialogs.internal.main.DialogLayout
 import com.afollestad.materialdialogs.list.getListAdapter
+import com.afollestad.materialdialogs.message.DialogMessageSettings
+import com.afollestad.materialdialogs.utils.MDUtil.assertOneSet
+import com.afollestad.materialdialogs.utils.MDUtil.resolveDimen
+import com.afollestad.materialdialogs.utils.font
 import com.afollestad.materialdialogs.utils.hideKeyboard
-import com.afollestad.materialdialogs.utils.inflate
 import com.afollestad.materialdialogs.utils.isVisible
 import com.afollestad.materialdialogs.utils.populateIcon
 import com.afollestad.materialdialogs.utils.populateText
-import com.afollestad.materialdialogs.utils.postShow
 import com.afollestad.materialdialogs.utils.preShow
-import com.afollestad.materialdialogs.utils.setDefaults
-import com.afollestad.materialdialogs.utils.setWindowConstraints
-
-internal fun assertOneSet(
-  method: String,
-  b: Any?,
-  a: Int?
-) {
-  if ((a == null || a == 0) && b == null) {
-    throw IllegalArgumentException("$method: You must specify a resource ID or literal value")
-  }
-}
+import com.afollestad.materialdialogs.utils.resolveColor
 
 typealias DialogCallback = (MaterialDialog) -> Unit
 
 /** @author Aidan Follestad (afollestad) */
 class MaterialDialog(
-  val windowContext: Context
-) : Dialog(windowContext, inferTheme(windowContext).styleRes) {
+  val windowContext: Context,
+  val dialogBehavior: DialogBehavior = DEFAULT_BEHAVIOR
+) : Dialog(windowContext, inferTheme(windowContext, dialogBehavior)) {
 
   /**
    * A named config map, used like tags for extensions.
@@ -77,15 +75,20 @@ class MaterialDialog(
   /** Returns true if auto dismiss is enabled. */
   var autoDismissEnabled: Boolean = true
     internal set
-
   var titleFont: Typeface? = null
     internal set
   var bodyFont: Typeface? = null
     internal set
   var buttonFont: Typeface? = null
     internal set
+  var cancelOnTouchOutside: Boolean = true
+    internal set
+  var cornerRadius: Float? = null
+    internal set
+  @Px private var maxWidth: Int? = null
 
-  internal val view: DialogLayout = inflate(R.layout.md_dialog_base)
+  /** The root layout of the dialog. */
+  val view: DialogLayout
 
   internal val preShowListeners = mutableListOf<DialogCallback>()
   internal val showListeners = mutableListOf<DialogCallback>()
@@ -97,10 +100,22 @@ class MaterialDialog(
   private val neutralListeners = mutableListOf<DialogCallback>()
 
   init {
-    setContentView(view)
-    this.view.dialog = this
-    setWindowConstraints()
-    setDefaults()
+    val layoutInflater = LayoutInflater.from(windowContext)
+    val rootView = dialogBehavior.createView(
+        creatingContext = windowContext,
+        dialogWindow = window!!,
+        layoutInflater = layoutInflater,
+        dialog = this
+    )
+    setContentView(rootView)
+    this.view = dialogBehavior.getDialogLayout(rootView)
+        .also { it.attachDialog(this) }
+
+    // Set defaults
+    this.titleFont = font(attr = R.attr.md_font_title)
+    this.bodyFont = font(attr = R.attr.md_font_body)
+    this.buttonFont = font(attr = R.attr.md_font_button)
+    invalidateBackgroundColorAndRadius()
   }
 
   /**
@@ -148,23 +163,19 @@ class MaterialDialog(
    *
    * @param res The string resource to display as the message.
    * @param text The literal string to display as the message.
-   * @param html When true, the given string is parsed as HTML and links become clickable.
-   * @param lineHeightMultiplier The line spacing for the message view, defaulting to 1.0.
    */
   fun message(
     @StringRes res: Int? = null,
     text: CharSequence? = null,
-    html: Boolean = false,
-    lineHeightMultiplier: Float = 1f
+    applySettings: (DialogMessageSettings.() -> Unit)? = null
   ): MaterialDialog {
     assertOneSet("message", text, res)
     this.view.contentLayout.setMessage(
         dialog = this,
         res = res,
         text = text,
-        html = html,
-        lineHeightMultiplier = lineHeightMultiplier,
-        typeface = this.bodyFont
+        typeface = this.bodyFont,
+        applySettings = applySettings
     )
     return this
   }
@@ -297,6 +308,52 @@ class MaterialDialog(
     return this
   }
 
+  /**
+   * Be careful with this. The specs say to use 280dp on a phone, and this value increases
+   * for landscape, tablets. etc.
+   *
+   * If you override this, you should make sure you test on larger screens and in different
+   * orientations.
+   *
+   * This value only takes effect when calling [show].
+   */
+  fun maxWidth(
+    @DimenRes res: Int? = null,
+    @Px literal: Int? = null
+  ): MaterialDialog {
+    assertOneSet("maxWidth", res, literal)
+    val shouldSetConstraints = this.maxWidth != null && this.maxWidth == 0
+    this.maxWidth = if (res != null) {
+      windowContext.resources.getDimensionPixelSize(res)
+    } else {
+      literal!!
+    }
+    if (shouldSetConstraints) {
+      setWindowConstraints()
+    }
+    return this
+  }
+
+  /**
+   * Sets the corner radius for the dialog, or the rounding of the corners. Dialogs can choose
+   * how they want to handle this, e.g. bottom sheets will only round the top left and right
+   * corners.
+   */
+  fun cornerRadius(
+    literalDp: Float? = null,
+    @DimenRes res: Int? = null
+  ): MaterialDialog {
+    assertOneSet("cornerRadius", literalDp, res)
+    this.cornerRadius = if (res != null) {
+      windowContext.resources.getDimension(res)
+    } else {
+      val displayMetrics = windowContext.resources.displayMetrics
+      TypedValue.applyDimension(COMPLEX_UNIT_DIP, literalDp!!, displayMetrics)
+    }
+    invalidateBackgroundColorAndRadius()
+    return this
+  }
+
   /** Turns debug mode on or off. Draws spec guides over dialog views. */
   @CheckResult fun debugMode(debugMode: Boolean = true): MaterialDialog {
     this.view.debugMode = debugMode
@@ -305,9 +362,11 @@ class MaterialDialog(
 
   /** Opens the dialog. */
   override fun show() {
+    setWindowConstraints()
     preShow()
+    dialogBehavior.onPreShow(this)
     super.show()
-    postShow()
+    dialogBehavior.onPostShow(this)
   }
 
   /** Applies multiple properties to the dialog and opens it. */
@@ -325,11 +384,15 @@ class MaterialDialog(
 
   /** A fluent version of [setCanceledOnTouchOutside]. */
   fun cancelOnTouchOutside(cancelable: Boolean): MaterialDialog {
+    cancelOnTouchOutside = true
     this.setCanceledOnTouchOutside(cancelable)
     return this
   }
 
   override fun dismiss() {
+    if (dialogBehavior.onDismiss()) {
+      return
+    }
     hideKeyboard()
     super.dismiss()
   }
@@ -347,5 +410,36 @@ class MaterialDialog(
     if (autoDismissEnabled) {
       dismiss()
     }
+  }
+
+  private fun setWindowConstraints() {
+    dialogBehavior.setWindowConstraints(
+        context = windowContext,
+        maxWidth = maxWidth,
+        window = window!!,
+        view = view
+    )
+  }
+
+  private fun invalidateBackgroundColorAndRadius() {
+    val backgroundColor = resolveColor(attr = R.attr.md_background_color) {
+      resolveColor(attr = R.attr.colorBackgroundFloating)
+    }
+    val cornerRadius =
+      cornerRadius ?: resolveDimen(windowContext, attr = R.attr.md_corner_radius)
+    window?.setBackgroundDrawable(ColorDrawable(TRANSPARENT))
+    dialogBehavior.setBackgroundColor(
+        view = view,
+        color = backgroundColor,
+        cornerRounding = cornerRadius
+    )
+  }
+
+  companion object {
+    /**
+     * The default [dialogBehavior] for all constructed instances of
+     * [MaterialDialog]. Defaults to [ModalDialog].
+     */
+    @JvmStatic var DEFAULT_BEHAVIOR: DialogBehavior = ModalDialog
   }
 }

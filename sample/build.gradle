@@ -14,6 +14,10 @@ android {
     versionCode versions.publishVersionCode
     versionName versions.publishVersion
   }
+
+  packagingOptions {
+    exclude 'META-INF/atomicfu.kotlin_module'
+  }
 }
 
 dependencies {
@@ -21,8 +25,11 @@ dependencies {
   implementation project(':input')
   implementation project(':files')
   implementation project(':color')
+  implementation project(':datetime')
+  implementation project(':bottomsheets')
+  implementation project(':lifecycle')
 
-  implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:' + versions.kotlin
+  implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:' + versions.kotlin
 
   implementation 'androidx.appcompat:appcompat:' + versions.androidxCore
   implementation 'androidx.gridlayout:gridlayout:' + versions.androidxRecyclerView
@@ -30,6 +37,8 @@ dependencies {
   implementation 'com.google.android.material:material:' + versions.androidxMaterial
 
   implementation 'com.afollestad:assent:' + versions.assent
+
+  debugImplementation 'com.squareup.leakcanary:leakcanary-android:' + versions.leakCanary
 }
 
 apply from: '../spotless.gradle'

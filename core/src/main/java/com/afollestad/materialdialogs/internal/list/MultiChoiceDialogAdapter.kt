@@ -20,6 +20,7 @@ import android.view.View.OnClickListener
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatCheckBox
+import androidx.core.widget.CompoundButtonCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.R
@@ -28,11 +29,13 @@ import com.afollestad.materialdialogs.actions.hasActionButtons
 import com.afollestad.materialdialogs.actions.setActionButtonEnabled
 import com.afollestad.materialdialogs.list.MultiChoiceListener
 import com.afollestad.materialdialogs.list.getItemSelector
+import com.afollestad.materialdialogs.utils.MDUtil.createColorSelector
+import com.afollestad.materialdialogs.utils.MDUtil.maybeSetTextColor
+import com.afollestad.materialdialogs.utils.MDUtil.inflate
 import com.afollestad.materialdialogs.utils.appendAll
-import com.afollestad.materialdialogs.utils.inflate
 import com.afollestad.materialdialogs.utils.pullIndices
 import com.afollestad.materialdialogs.utils.removeAll
-import com.afollestad.materialdialogs.utils.MDUtil.maybeSetTextColor
+import com.afollestad.materialdialogs.utils.resolveColors
 
 /** @author Aidan Follestad (afollestad) */
 internal class MultiChoiceViewHolder(
@@ -79,13 +82,13 @@ internal class MultiChoiceDialogAdapter(
       for (previous in previousSelection) {
         if (!value.contains(previous)) {
           // This value was unselected
-          notifyItemChanged(previous)
+          notifyItemChanged(previous, UncheckPayload)
         }
       }
       for (current in value) {
         if (!previousSelection.contains(current)) {
           // This value was selected
-          notifyItemChanged(current)
+          notifyItemChanged(current, CheckPayload)
         }
       }
     }
@@ -124,6 +127,16 @@ internal class MultiChoiceDialogAdapter(
         adapter = this
     )
     viewHolder.titleView.maybeSetTextColor(dialog.windowContext, R.attr.md_color_content)
+
+    val widgetAttrs = intArrayOf(R.attr.md_color_widget, R.attr.md_color_widget_unchecked)
+    dialog.resolveColors(attrs = widgetAttrs)
+        .let {
+          CompoundButtonCompat.setButtonTintList(
+              viewHolder.controlView,
+              createColorSelector(dialog.windowContext, checked = it[0], unchecked = it[1])
+          )
+        }
+
     return viewHolder
   }
 
@@ -144,6 +157,25 @@ internal class MultiChoiceDialogAdapter(
     }
   }
 
+  override fun onBindViewHolder(
+    holder: MultiChoiceViewHolder,
+    position: Int,
+    payloads: MutableList<Any>
+  ) {
+    when (payloads.firstOrNull()) {
+      CheckPayload -> {
+        holder.controlView.isChecked = true
+        return
+      }
+      UncheckPayload -> {
+        holder.controlView.isChecked = false
+        return
+      }
+    }
+    super.onBindViewHolder(holder, position, payloads)
+    super.onBindViewHolder(holder, position, payloads)
+  }
+
   override fun positiveButtonClicked() {
     if (allowEmptySelection || currentSelection.isNotEmpty()) {
       val selectedItems = items.pullIndices(currentSelection)
@@ -156,7 +188,9 @@ internal class MultiChoiceDialogAdapter(
     listener: MultiChoiceListener
   ) {
     this.items = items
-    this.selection = listener
+    if (listener != null) {
+      this.selection = listener
+    }
     this.notifyDataSetChanged()
   }
 
@@ -169,12 +203,20 @@ internal class MultiChoiceDialogAdapter(
     val existingSelection = this.currentSelection
     val indicesToAdd = indices.filter { !existingSelection.contains(it) }
     this.currentSelection = this.currentSelection.appendAll(indicesToAdd)
+    if (existingSelection.isEmpty()) {
+      dialog.setActionButtonEnabled(POSITIVE, true)
+    }
   }
 
   override fun uncheckItems(indices: IntArray) {
     val existingSelection = this.currentSelection
     val indicesToAdd = indices.filter { existingSelection.contains(it) }
     this.currentSelection = this.currentSelection.removeAll(indicesToAdd)
+        .also {
+          if (it.isEmpty()) {
+            dialog.setActionButtonEnabled(POSITIVE, allowEmptySelection)
+          }
+        }
   }
 
   override fun toggleItems(indices: IntArray) {
@@ -188,6 +230,9 @@ internal class MultiChoiceDialogAdapter(
       }
     }
     this.currentSelection = newSelection.toIntArray()
+        .also {
+          dialog.setActionButtonEnabled(POSITIVE, if (it.isEmpty()) allowEmptySelection else true)
+        }
   }
 
   override fun checkAllItems() {
@@ -195,10 +240,14 @@ internal class MultiChoiceDialogAdapter(
     val wholeRange = IntArray(itemCount) { it }
     val indicesToAdd = wholeRange.filter { !existingSelection.contains(it) }
     this.currentSelection = this.currentSelection.appendAll(indicesToAdd)
+    if (existingSelection.isEmpty()) {
+      dialog.setActionButtonEnabled(POSITIVE, true)
+    }
   }
 
   override fun uncheckAllItems() {
     this.currentSelection = intArrayOf()
+    dialog.setActionButtonEnabled(POSITIVE, allowEmptySelection)
   }
 
   override fun toggleAllChecked() {

@@ -25,6 +25,8 @@ import android.view.View.MeasureSpec.getSize
 import android.view.View.MeasureSpec.makeMeasureSpec
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 import com.afollestad.materialdialogs.R
 import com.afollestad.materialdialogs.utils.MDUtil.dimenPx
 import com.afollestad.materialdialogs.utils.isNotVisible
@@ -37,7 +39,8 @@ import java.lang.Math.max
  *
  * @author Aidan Follestad (afollestad)
  */
-internal class DialogTitleLayout(
+@RestrictTo(LIBRARY_GROUP)
+class DialogTitleLayout(
   context: Context,
   attrs: AttributeSet? = null
 ) : BaseSubLayout(context, attrs) {
@@ -154,41 +157,6 @@ internal class DialogTitleLayout(
 
   override fun onDraw(canvas: Canvas) {
     super.onDraw(canvas)
-
-    if (dialogParent().debugMode) {
-      // Fill above the title
-      canvas.drawRect(
-          0f,
-          0f,
-          measuredWidth.toFloat(),
-          frameMarginVertical.toFloat(),
-          debugPaint(DEBUG_COLOR_PINK)
-      )
-      // Fill below the title
-      canvas.drawRect(
-          0f,
-          measuredHeight.toFloat() - titleMarginBottom,
-          measuredWidth.toFloat(),
-          measuredHeight.toFloat(),
-          debugPaint(DEBUG_COLOR_PINK)
-      )
-      // Fill to the left of the title
-      canvas.drawRect(
-          0f,
-          0f,
-          frameMarginHorizontal.toFloat(),
-          measuredHeight.toFloat(),
-          debugPaint(DEBUG_COLOR_DARK_PINK)
-      )
-      // Fill to the right of the title
-      canvas.drawRect(
-          measuredWidth.toFloat() - frameMarginHorizontal,
-          0f,
-          measuredWidth.toFloat(),
-          measuredHeight.toFloat(),
-          debugPaint(DEBUG_COLOR_DARK_PINK)
-      )
-    }
 
     if (drawDivider) {
       canvas.drawLine(

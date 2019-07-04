@@ -9,6 +9,15 @@ android {
   compileSdkVersion versions.compileSdk
   buildToolsVersion versions.buildTools
 
+  compileOptions {
+    if (modulePackageId != null && modulePackageId != '') {
+      logger.warn('Package for current module: ' + modulePackageId)
+      kotlinOptions.freeCompilerArgs += ['-module-name', modulePackageId]
+    } else {
+      logger.warn('Skipping setting compiler module name, no package to use.')
+    }
+  }
+
   defaultConfig {
     minSdkVersion versions.minSdk
     targetSdkVersion versions.compileSdk
@@ -29,7 +38,7 @@ dependencies {
   api 'androidx.annotation:annotation:' + versions.androidxAnnotation
 
   implementation 'androidx.recyclerview:recyclerview:' + versions.androidxRecyclerView
-  implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:' + versions.kotlin
+  implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:' + versions.kotlin
 }
 
 apply from: '../spotless.gradle'

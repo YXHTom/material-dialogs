@@ -20,6 +20,7 @@ import android.view.View.OnClickListener
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatRadioButton
+import androidx.core.widget.CompoundButtonCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.R
@@ -28,8 +29,10 @@ import com.afollestad.materialdialogs.actions.hasActionButtons
 import com.afollestad.materialdialogs.actions.setActionButtonEnabled
 import com.afollestad.materialdialogs.list.SingleChoiceListener
 import com.afollestad.materialdialogs.list.getItemSelector
-import com.afollestad.materialdialogs.utils.inflate
+import com.afollestad.materialdialogs.utils.MDUtil.createColorSelector
+import com.afollestad.materialdialogs.utils.MDUtil.inflate
 import com.afollestad.materialdialogs.utils.MDUtil.maybeSetTextColor
+import com.afollestad.materialdialogs.utils.resolveColors
 
 /** @author Aidan Follestad (afollestad) */
 internal class SingleChoiceViewHolder(
@@ -71,10 +74,11 @@ internal class SingleChoiceDialogAdapter(
 
   private var currentSelection: Int = initialSelection
     set(value) {
+      if (value == field) return
       val previousSelection = field
       field = value
-      notifyItemChanged(previousSelection)
-      notifyItemChanged(value)
+      notifyItemChanged(previousSelection, UncheckPayload)
+      notifyItemChanged(value, CheckPayload)
     }
   private var disabledIndices: IntArray = disabledItems ?: IntArray(0)
 
@@ -103,6 +107,16 @@ internal class SingleChoiceDialogAdapter(
         adapter = this
     )
     viewHolder.titleView.maybeSetTextColor(dialog.windowContext, R.attr.md_color_content)
+
+    val widgetAttrs = intArrayOf(R.attr.md_color_widget, R.attr.md_color_widget_unchecked)
+    dialog.resolveColors(attrs = widgetAttrs)
+        .let {
+          CompoundButtonCompat.setButtonTintList(
+              viewHolder.controlView,
+              createColorSelector(dialog.windowContext, checked = it[0], unchecked = it[1])
+          )
+        }
+
     return viewHolder
   }
 
@@ -113,14 +127,32 @@ internal class SingleChoiceDialogAdapter(
     position: Int
   ) {
     holder.isEnabled = !disabledIndices.contains(position)
-
     holder.controlView.isChecked = currentSelection == position
+
     holder.titleView.text = items[position]
     holder.itemView.background = dialog.getItemSelector()
 
     if (dialog.bodyFont != null) {
       holder.titleView.typeface = dialog.bodyFont
     }
+  }
+
+  override fun onBindViewHolder(
+    holder: SingleChoiceViewHolder,
+    position: Int,
+    payloads: MutableList<Any>
+  ) {
+    when (payloads.firstOrNull()) {
+      CheckPayload -> {
+        holder.controlView.isChecked = true
+        return
+      }
+      UncheckPayload -> {
+        holder.controlView.isChecked = false
+        return
+      }
+    }
+    super.onBindViewHolder(holder, position, payloads)
   }
 
   override fun positiveButtonClicked() {
@@ -134,7 +166,9 @@ internal class SingleChoiceDialogAdapter(
     listener: SingleChoiceListener
   ) {
     this.items = items
-    this.selection = listener
+    if (listener != null) {
+      this.selection = listener
+    }
     this.notifyDataSetChanged()
   }
 

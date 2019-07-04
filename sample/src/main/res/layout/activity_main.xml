@@ -41,6 +41,12 @@
         />
 
     <Button
+        android:id="@+id/basic_stacked_buttons"
+        android:text="Basic + Stacked Buttons"
+        style="@style/SampleButton"
+        />
+
+    <Button
         android:id="@+id/basic_titled_buttons"
         android:text="Basic + Title + Buttons"
         style="@style/SampleButton"
@@ -49,12 +55,6 @@
     <Button
         android:id="@+id/basic_html_content"
         android:text="Basic + HTML Content"
-        style="@style/SampleButton"
-        />
-
-    <Button
-        android:id="@+id/basic_long"
-        android:text="Basic Long"
         style="@style/SampleButton"
         />
 
@@ -96,6 +96,12 @@
         />
 
     <Button
+        android:id="@+id/list_dont_wait_positive"
+        android:text="List + Don't Wait For Positive"
+        style="@style/SampleButton"
+        />
+
+    <Button
         android:id="@+id/list_titled"
         android:text="List + Title"
         style="@style/SampleButton"
@@ -120,51 +126,8 @@
         />
 
     <Button
-        android:id="@+id/list_long_buttons"
-        android:text="List Long + Buttons"
-        style="@style/SampleButton"
-        />
-
-    <Button
         android:id="@+id/list_long_titled"
         android:text="List Long + Title"
-        style="@style/SampleButton"
-        />
-
-    <Button
-        android:id="@+id/list_long_titled_buttons"
-        android:text="List Long + Title + Buttons"
-        style="@style/SampleButton"
-        />
-
-    <Button
-        android:id="@+id/list_long_items"
-        android:text="List, Long Items"
-        style="@style/SampleButton"
-        />
-
-    <Button
-        android:id="@+id/list_long_items_buttons"
-        android:text="List, Long Items + Buttons"
-        style="@style/SampleButton"
-        />
-
-    <Button
-        android:id="@+id/list_long_items_titled"
-        android:text="List, Long Items + Title"
-        style="@style/SampleButton"
-        />
-
-    <Button
-        android:id="@+id/list_long_items_titled_buttons"
-
-        android:text="List, Long Items + Title + Buttons"
-        style="@style/SampleButton"
-        />
-
-    <Button
-        android:id="@+id/list_checkPrompt"
-        android:text="List + Title + Checkbox Prompt"
         style="@style/SampleButton"
         />
 
@@ -412,6 +375,74 @@
     <Button
         android:id="@+id/folder_chooser_filter"
         android:text="Folder Chooser + Filter"
+        style="@style/SampleButton"
+        />
+
+    <!-- DateTime Pickers -->
+
+    <TextView
+        android:text="DateTime Pickers"
+        style="@style/SampleHeader"
+        />
+
+    <Button
+        android:id="@+id/date_picker"
+        android:text="Date Picker"
+        style="@style/SampleButton"
+        />
+
+    <Button
+        android:id="@+id/time_picker"
+        android:text="Time Picker"
+        style="@style/SampleButton"
+        />
+
+    <Button
+        android:id="@+id/datetime_picker"
+        android:text="DateTime Picker"
+        style="@style/SampleButton"
+        />
+
+    <!-- Bottom Sheets -->
+
+    <TextView
+        android:text="Bottom Sheets"
+        style="@style/SampleHeader"
+        />
+
+    <Button
+        android:id="@+id/bottomsheet_info"
+        android:text="Informational"
+        style="@style/SampleButton"
+        />
+
+    <Button
+        android:id="@+id/bottomsheet_list"
+        android:text="Item List"
+        style="@style/SampleButton"
+        />
+
+    <Button
+        android:id="@+id/bottomsheet_grid"
+        android:text="Item Grid"
+        style="@style/SampleButton"
+        />
+
+    <Button
+        android:id="@+id/bottomsheet_customView"
+        android:text="Custom View"
+        style="@style/SampleButton"
+        />
+
+    <Button
+        android:id="@+id/bottomsheet_colorPicker"
+        android:text="Color Picker"
+        style="@style/SampleButton"
+        />
+
+    <Button
+        android:id="@+id/bottomsheet_dateTimePicker"
+        android:text="DateTime Picker"
         style="@style/SampleButton"
         />
 
